@@ -1,5 +1,6 @@
 var container;
 var camera, scene, renderer;
+const gridSize = 12;
 
 init();
 animate();
@@ -9,16 +10,16 @@ function init()
     container = document.getElementById('container');
 
     scene = new THREE.Scene();
-    displayTriangle();
+    displayRegularGrid();
 
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 4000); 
-    camera.position.set(0, 0, 10);
+    camera.position.set(0, 0, 2 * gridSize);
     camera.lookAt(new THREE.Vector3(0, 0, 0)); 
     
     renderer = new THREE.WebGLRenderer( { antialias: false } );
     renderer.setSize(window.innerWidth, window.innerHeight);
     
-    renderer.setClearColor(0x000000ff, 1);
+    renderer.setClearColor(0x22222222, 1);
     container.appendChild(renderer.domElement);
     
     window.addEventListener('resize', onWindowResize, false);
@@ -43,28 +44,35 @@ function render()
     renderer.render(scene, camera);
 }
 
-function displayTriangle()
+function displayRegularGrid()
 {
     var geometry = new THREE.Geometry();
 
-    geometry.vertices.push(new THREE.Vector3(-3.0, -3.0, 0.0));
-    geometry.vertices.push(new THREE.Vector3(3.0, -3.0, 0.0));
-    geometry.vertices.push(new THREE.Vector3(0.0, 3.0, 0.0));
+    for (let x = 0; x <= gridSize; x++)
+    {
+        for (let y = 0; y <= gridSize; y++)
+        {
+            geometry.vertices.push(new THREE.Vector3(x -gridSize/2, y - gridSize/2, 0.0));
+        }
+    }
 
-    geometry.faces.push(new THREE.Face3(0, 1, 2));
+    for (let j = 0.0; j < gridSize; j++)
+    {
+        for (let i = j * (gridSize + 1); i < (j + 1) * (gridSize + 1) - 1; i++)
+        {    
+            geometry.faces.push(new THREE.Face3(i, i + 1, gridSize + 1 + i));
+            geometry.faces.push(new THREE.Face3(i + 1, i + gridSize + 2, gridSize + 1 + i));  
+        }
+    }
 
-    geometry.faces[0].vertexColors[0] = new THREE.Color(0xff0000);
-    geometry.faces[0].vertexColors[1] = new THREE.Color(0x00ff00);
-    geometry.faces[0].vertexColors[2] = new THREE.Color(0xff00ff);
-
-    var triangleMaterial = new THREE.MeshBasicMaterial({
+    var meshMaterial = new THREE.MeshBasicMaterial({
         vertexColors: THREE.VertexColors,
-        wireframe: false,
+        wireframe: true,
         side: THREE.DoubleSide
     });
-    
-    var triangleMesh = new THREE.Mesh(geometry, triangleMaterial);
-    triangleMesh.position.set(0.0, 0.0, 0.0);
-    
-    scene.add(triangleMesh);
+
+    var regularGrid = new THREE.Mesh(geometry, meshMaterial);
+    regularGrid.position.set(0.0, 0.0, 0.0);
+
+    scene.add(regularGrid);
 }
