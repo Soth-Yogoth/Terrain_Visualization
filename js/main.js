@@ -73,6 +73,8 @@ function animate()
 {
     requestAnimationFrame(animate);
     render(); 
+
+    terrainMesh.rotateZ(0.002);
 }
 
 function render()
