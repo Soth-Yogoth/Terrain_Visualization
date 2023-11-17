@@ -65,9 +65,28 @@ function displayRegularGrid()
         }
     }
 
+    for (let x = 0.0; x < 1; x += 1/gridSize)
+    {
+        for (let y = 0.0; y + 1/gridSize < 1.01; y += 1/gridSize)
+        {    
+            geometry.faceVertexUvs[0].push([
+                new THREE.Vector2(x, y),
+                new THREE.Vector2(x, y + 1/gridSize),
+                new THREE.Vector2(x + 1/gridSize, y)]);
+                
+           geometry.faceVertexUvs[0].push([
+                new THREE.Vector2(x, y + 1/gridSize),
+                new THREE.Vector2(x + 1/gridSize, y + 1/gridSize),
+                new THREE.Vector2(x + 1/gridSize, y)]);
+        }
+    }
+
+    var loader = new THREE.TextureLoader();
+    var texture = loader.load('pics/box_texture.jpg');
+
     var meshMaterial = new THREE.MeshBasicMaterial({
-        vertexColors: THREE.VertexColors,
-        wireframe: true,
+        map: texture,
+        wireframe: false,
         side: THREE.DoubleSide
     });
 
