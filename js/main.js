@@ -2,7 +2,7 @@ var container;
 var camera, scene, renderer;
 
 var gridSize;
-var height;
+var length;
 var width;
 var terrainMesh;
 
