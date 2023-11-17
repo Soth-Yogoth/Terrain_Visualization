@@ -1,6 +1,14 @@
 var container;
 var camera, scene, renderer;
-const gridSize = 12;
+
+var gridSize;
+var height;
+var width;
+var terrainMesh;
+
+var imagedata;
+var img = new Image()
+var src = 'pics/Map3.jpg';
 
 init();
 animate();
@@ -10,19 +18,47 @@ function init()
     container = document.getElementById('container');
 
     scene = new THREE.Scene();
-    displayRegularGrid();
-
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 4000); 
-    camera.position.set(0, 0, 2 * gridSize);
-    camera.lookAt(new THREE.Vector3(0, 0, 0)); 
     
     renderer = new THREE.WebGLRenderer( { antialias: false } );
     renderer.setSize(window.innerWidth, window.innerHeight);
-    
     renderer.setClearColor(0x22222222, 1);
     container.appendChild(renderer.domElement);
-    
+
+    img.onload = function()
+    {
+        gridSize = Math.max(img.height, img.width);
+        length = img.height;
+        width = img.width;
+
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+
+        canvas.width = width;
+        canvas.height = length;
+        
+        context.drawImage(img, 0 , 0);
+        imagedata = context.getImageData(0, 0, width, length);
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 4000); 
+        camera.position.set(0, -gridSize, gridSize);
+        camera.lookAt(new THREE.Vector3(0, -gridSize/8, 0)); 
+
+        var spotlight = new THREE.PointLight(0xEEE8AA);
+        spotlight.position.set(-gridSize, -gridSize, 2*gridSize);
+        scene.add(spotlight);
+
+        terrainMesh = createTerrain();
+        scene.add(terrainMesh);
+    }
+    img.src = src;
+
     window.addEventListener('resize', onWindowResize, false);
+}
+
+function getPixel(imagedata, x, y)
+{
+    var position = (imagedata.width * y + x) * 4, data = imagedata.data;
+    return data[position];
 }
 
 function onWindowResize()
@@ -44,54 +80,60 @@ function render()
     renderer.render(scene, camera);
 }
 
-function displayRegularGrid()
+function createTerrain()
 {
     var geometry = new THREE.Geometry();
 
-    for (let x = 0; x <= gridSize; x++)
+    for (let x = 0; x <= width; x++)
     {
-        for (let y = 0; y <= gridSize; y++)
+        for (let y = 0; y <= length; y++)
         {
-            geometry.vertices.push(new THREE.Vector3(x -gridSize/2, y - gridSize/2, 0.0));
+            var height = getPixel(imagedata, x, y) / 2550 * gridSize;
+            geometry.vertices.push(new THREE.Vector3(x - width/2, y - length/2, height));
         }
     }
 
-    for (let j = 0.0; j < gridSize; j++)
+    for (let j = 0.0; j < width; j++)
     {
-        for (let i = j * (gridSize + 1); i < (j + 1) * (gridSize + 1) - 1; i++)
+        for (let i = j * (length + 1); i < (j + 1) * (length + 1) - 1; i++)
         {    
-            geometry.faces.push(new THREE.Face3(i, i + 1, gridSize + 1 + i));
-            geometry.faces.push(new THREE.Face3(i + 1, i + gridSize + 2, gridSize + 1 + i));  
+            geometry.faces.push(new THREE.Face3(i, i + 1, length + 1 + i));
+            geometry.faces.push(new THREE.Face3(i + 1, i + length + 2, length + 1 + i));   
         }
     }
 
-    for (let x = 0.0; x < 1; x += 1/gridSize)
+    for (let x = 0.0; x < 1; x += 1/width)
     {
-        for (let y = 0.0; y + 1/gridSize < 1.01; y += 1/gridSize)
+        for (let y = 0.0; y < 1; y += 1/length)
         {    
             geometry.faceVertexUvs[0].push([
                 new THREE.Vector2(x, y),
-                new THREE.Vector2(x, y + 1/gridSize),
-                new THREE.Vector2(x + 1/gridSize, y)]);
+                new THREE.Vector2(x, y + 1/length),
+                new THREE.Vector2(x + 1/width, y)]);
                 
            geometry.faceVertexUvs[0].push([
-                new THREE.Vector2(x, y + 1/gridSize),
-                new THREE.Vector2(x + 1/gridSize, y + 1/gridSize),
-                new THREE.Vector2(x + 1/gridSize, y)]);
+                new THREE.Vector2(x, y + 1/length),
+                new THREE.Vector2(x + 1/width, y + 1/length),
+                new THREE.Vector2(x + 1/width, y)]);
         }
     }
 
-    var loader = new THREE.TextureLoader();
-    var texture = loader.load('pics/box_texture.jpg');
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
 
-    var meshMaterial = new THREE.MeshBasicMaterial({
+    var loader = new THREE.TextureLoader();
+    var texture = loader.load('pics/grass.jpg');
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(5, 5);
+
+    var terrainMaterial = new THREE.MeshLambertMaterial({
         map: texture,
         wireframe: false,
         side: THREE.DoubleSide
     });
 
-    var regularGrid = new THREE.Mesh(geometry, meshMaterial);
-    regularGrid.position.set(0.0, 0.0, 0.0);
+    var terrainMesh = new THREE.Mesh(geometry, terrainMaterial);
+    terrainMesh.position.set(0.0, 0.0, 0.0);
 
-    scene.add(regularGrid);
+    return terrainMesh;
 }
